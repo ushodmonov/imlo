@@ -32,6 +32,8 @@ src/
     dom.js, router.js, script-mode.js, theme.js
   views/                    sahifalar
     search.js, text-check.js, converter.js, browse.js
+tests/                      node:test testlari
+.github/workflows/          CI/CD
 ```
 
 ## Lokal ishga tushirish
@@ -39,15 +41,18 @@ src/
 ES-modullar va `fetch` `file://` da ishlamaydi, shuning uchun oddiy server kerak:
 
 ```sh
-python3 -m http.server 8000
-# http://localhost:8000
+npm start        # python3 -m http.server 8000 → http://localhost:8000
+npm test         # core/ mantiq testlari (Node 22+)
 ```
 
-## GitHub Pages’ga joylash
+## CI/CD
 
-1. Repozitoriyga push qiling.
-2. **Settings → Pages → Build and deployment**: *Deploy from a branch*, `main` / `/ (root)`.
-3. Sayt `https://<username>.github.io/<repo>/` manzilida ochiladi.
+`.github/workflows/deploy.yml`:
 
-Barcha yo‘llar nisbiy, shuning uchun subpapkada ham ishlaydi.
-Lug‘atni yangilash uchun `data/imlo_uz_words.txt` ni almashtiring.
+- har bir push va pull request’da sintaksis tekshiruvi va testlar ishlaydi;
+- `main` ga push bo‘lganda testlar o‘tsa, sayt GitHub Pages’ga avtomatik joylanadi.
+
+Bir martalik sozlash: **Settings → Pages → Source: GitHub Actions**.
+Sayt manzili: https://ushodmonov.github.io/imlo/
+
+Lug‘atni yangilash uchun `data/imlo_uz_words.txt` ni almashtirib, push qiling.
