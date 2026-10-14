@@ -23,11 +23,13 @@ function adaptTo(original, suggestion) {
   return isCapital ? word[0].toUpperCase() + word.slice(1) : word;
 }
 
-export function createTextCheckView({ dictionary, setHash }) {
+export function createTextCheckView({ dictionary, synonyms, setHash }) {
   const textarea = $("#text-input");
   const output = $("#text-output");
   const stats = $("#text-stats");
   let popover = null;
+
+  const isWord = (key) => dictionary.indexOf(key) >= 0;
 
   function closePopover() {
     popover?.remove();
@@ -40,13 +42,14 @@ export function createTextCheckView({ dictionary, setHash }) {
     check();
   }
 
-  function openPopover(anchor, token) {
+  function openPopover(anchor, token, suggestions, title) {
     closePopover();
-    const options = dictionary.similarTo(token.word, SUGGESTION_LIMIT)
-      .map((index) => adaptTo(token.word, dictionary.word(index)))
+    const options = suggestions
+      .map((word) => adaptTo(token.word, word))
       .map((word) => el("button", { type: "button", onclick: () => replaceWord(token, word) }, word));
 
     popover = el("div", { className: "popover" },
+      title ? el("div", { className: "popover__title" }, show(title)) : null,
       ...(options.length ? options : [el("div", { className: "popover__empty" }, show("Taklif yo‘q"))]));
 
     const rect = anchor.getBoundingClientRect();
@@ -58,7 +61,18 @@ export function createTextCheckView({ dictionary, setHash }) {
   function errorMark(token) {
     return el("span", {
       className: "err",
-      onclick: (event) => { event.stopPropagation(); openPopover(event.currentTarget, token); },
+      onclick: (event) => {
+        event.stopPropagation();
+        const similar = dictionary.similarTo(token.word, SUGGESTION_LIMIT).map((index) => dictionary.word(index));
+        openPopover(event.currentTarget, token, similar);
+      },
+    }, token.word);
+  }
+
+  function synonymMark(token, forms) {
+    return el("span", {
+      className: "syn",
+      onclick: (event) => { event.stopPropagation(); openPopover(event.currentTarget, token, forms, "Sinonimlar"); },
     }, token.word);
   }
 
@@ -73,18 +87,26 @@ export function createTextCheckView({ dictionary, setHash }) {
     }
 
     const parts = [];
-    let cursor = 0, total = 0, unknown = 0;
+    let cursor = 0, total = 0, unknown = 0, withSynonyms = 0;
     for (const token of tokenize(text)) {
       total++;
-      if (dictionary.hasForm(token.word)) continue;
-      unknown++;
-      parts.push(text.slice(cursor, token.start), errorMark(token));
+      let mark;
+      if (!dictionary.hasForm(token.word)) {
+        unknown++;
+        mark = errorMark(token);
+      } else {
+        const forms = synonyms.forms(token.word, isWord);
+        if (!forms.length) continue;
+        withSynonyms++;
+        mark = synonymMark(token, forms);
+      }
+      parts.push(text.slice(cursor, token.start), mark);
       cursor = token.start + token.word.length;
     }
     parts.push(text.slice(cursor));
 
     output.replaceChildren(...parts);
-    stats.textContent = show(`${total} ta so‘z, ${unknown} ta notanish`);
+    stats.textContent = show(`${total} ta so‘z, ${unknown} ta notanish, ${withSynonyms} tasining sinonimi bor`);
   }
 
   function clear() {

@@ -5,7 +5,7 @@ import { toCyrillic } from "../core/transliteration.js";
 
 const SUGGESTION_LIMIT = 10;
 
-export function createSearchView({ dictionary, setHash }) {
+export function createSearchView({ dictionary, synonyms, setHash }) {
   const form = $("#search-form");
   const input = $("#search-input");
   const suggestList = $("#suggest");
@@ -14,6 +14,7 @@ export function createSearchView({ dictionary, setHash }) {
 
   let suggestions = [];
   let activeSuggestion = -1;
+  let shownQuery = "";
 
   // ----- Avtoto‘ldirish -----
 
@@ -66,6 +67,48 @@ export function createSearchView({ dictionary, setHash }) {
       el("button", { type: "button", className: "chip", onclick: () => open(index) }, show(dictionary.word(index)))));
   }
 
+  /** Sinonim/antonimlar; imlo lug‘atida bori o‘sha yerdagi yozilishida ko‘rsatiladi. */
+  function relatedChips(list) {
+    return el("div", { className: "chips" }, ...list.map((synonym) => {
+      const index = dictionary.indexOf(synonym);
+      const word = index >= 0 ? dictionary.word(index) : synonym;
+      return el("button", { type: "button", className: "chip", onclick: () => lookUp(word) }, show(word));
+    }));
+  }
+
+  /** @param {import("../core/synonyms.js").Sense} sense */
+  function senseItem({ t, u, m, e, s = [], a = [] }) {
+    const relation = (label, list) => list.length
+      ? el("div", { className: "sense__rel" }, el("span", { className: "sense__label" }, show(label)), relatedChips(list))
+      : null;
+    return el("li", { className: "sense" },
+      el("div", {}, ...[t, u].filter(Boolean).map((tag) => el("span", { className: "tag" }, show(tag))), show(m)),
+      e ? el("div", { className: "sense__example" }, show(e)) : null,
+      relation("Sinonimlari:", s),
+      relation("Antonimlari:", a),
+    );
+  }
+
+  /** Ma’nolari, so‘ng ma’nolarda ko‘rsatilmagan sinonim va antonimlar. */
+  function meaningNodes(word) {
+    const senses = synonyms.sensesOf(word);
+    const inSenses = (field) => new Set(senses.flatMap((sense) => (sense[field] ?? []).map(normalize)));
+    const shownSynonyms = inSenses("s");
+    const shownAntonyms = inSenses("a");
+    const otherSynonyms = synonyms.of(word).filter((w) => !shownSynonyms.has(w));
+    const otherAntonyms = synonyms.antonymsOf(word).filter((w) => !shownAntonyms.has(w));
+    const prefix = senses.length ? "Boshqa " : "";
+
+    return [
+      senses.length ? el("h4", {}, show("Ma’nolari")) : null,
+      senses.length ? el("ol", { className: "senses" }, ...senses.map(senseItem)) : null,
+      otherSynonyms.length ? el("h4", {}, show(`${prefix}sinonimlari`)) : null,
+      otherSynonyms.length ? relatedChips(otherSynonyms) : null,
+      otherAntonyms.length ? el("h4", {}, show(`${prefix}antonimlari`)) : null,
+      otherAntonyms.length ? relatedChips(otherAntonyms) : null,
+    ];
+  }
+
   function copyButton(text) {
     const copy = () => copyToClipboard(text, show("Nusxalandi"));
     return el("button", { type: "button", className: "copy-btn", onclick: copy }, show("Nusxalash"));
@@ -80,6 +123,7 @@ export function createSearchView({ dictionary, setHash }) {
       el("span", { className: "status status--ok" }, show("✓ To‘g‘ri yozilgan")),
       el("div", { className: "result__word" }, show(word), copyButton(show(word))),
       el("div", { className: "result__alt" }, otherScript),
+      ...meaningNodes(word),
       derived.length ? el("h4", {}, show("Shu so‘z bilan boshlanadigan so‘zlar")) : null,
       derived.length ? wordChips(derived) : null,
     );
@@ -94,7 +138,14 @@ export function createSearchView({ dictionary, setHash }) {
         ? el("h4", {}, show("Balki siz shuni nazarda tutgandirsiz"))
         : el("p", { className: "muted" }, show("O‘xshash so‘z topilmadi. Yozilishini tekshirib, qayta urinib ko‘ring.")),
       similar.length ? wordChips(similar) : null,
+      // imlo lug‘atida yo‘q, lekin sinonimlar lug‘atida bor so‘zlar (iboralar) uchun
+      ...meaningNodes(query),
     );
+  }
+
+  function render(query) {
+    const index = dictionary.indexOf(query);
+    result.replaceChildren(index >= 0 ? foundCard(index) : notFoundCard(query));
   }
 
   function search(query) {
@@ -102,16 +153,20 @@ export function createSearchView({ dictionary, setHash }) {
     closeSuggestions();
     tips.hidden = Boolean(key);
     setHash(key ? `q=${key}` : "");
+    shownQuery = key ? query : "";
 
     if (!key) return result.replaceChildren();
-    const index = dictionary.indexOf(key);
-    result.replaceChildren(index >= 0 ? foundCard(index) : notFoundCard(query));
+    render(query);
+  }
+
+  function lookUp(word) {
+    input.value = show(word);
+    search(word);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function open(index) {
-    input.value = show(dictionary.word(index));
-    search(dictionary.word(index));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    lookUp(dictionary.word(index));
   }
 
   // ----- Hodisalar -----
@@ -156,6 +211,10 @@ export function createSearchView({ dictionary, setHash }) {
       const key = normalize(input.value);
       input.value = show(key);
       if (key) search(key);
+    },
+    /** Ko‘rsatilgan natijani qayta chizish (yozilayotgan matnga tegmaydi). */
+    redraw() {
+      if (shownQuery) render(shownQuery);
     },
     open,
   };

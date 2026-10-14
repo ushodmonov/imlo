@@ -51,8 +51,10 @@ function latinWordToCyrillic(token) {
     const char = lower[i];
     const pair = lower.slice(i, i + 2);
     const atSyllableStart = i === 0 || LATIN_VOWELS.includes(lower[i - 1]);
+    // yo‘q → йўқ: bu yerda "yo" emas, y + o‘
+    const isDigraph = LATIN_DIGRAPHS[pair] && !(pair === "yo" && lower[i + 2] === APOSTROPHE);
 
-    if (LATIN_DIGRAPHS[pair]) {
+    if (isDigraph) {
       out += LATIN_DIGRAPHS[pair];
       i++;
     } else if (TS_AS_TSE.test(lower.slice(i))) {

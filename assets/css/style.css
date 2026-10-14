@@ -260,6 +260,18 @@ main.container { flex: 1; padding-bottom: 48px; }
 }
 .chip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
 
+/* Ma’nolar */
+.senses { margin: 0; padding-left: 22px; display: grid; gap: 16px; line-height: 1.5; }
+.sense::marker { color: var(--muted); font-weight: 600; }
+.tag {
+  display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 99px;
+  background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 600; vertical-align: 1px;
+}
+.sense__example { margin-top: 4px; color: var(--muted); font-style: italic; font-size: 15px; }
+.sense__rel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.sense__label { color: var(--muted); font-size: 13px; }
+.sense__rel .chip { padding: 3px 11px; font-size: 14px; }
+
 /* Tips */
 .tips {
   display: grid;
@@ -326,6 +338,11 @@ main.container { flex: 1; padding-bottom: 48px; }
   cursor: pointer;
   position: relative;
 }
+.syn {
+  border-bottom: 2px dotted var(--primary);
+  cursor: pointer;
+}
+.syn:hover { background: var(--primary-soft); color: var(--primary); border-radius: 3px; }
 .popover {
   position: absolute;
   z-index: 30;
@@ -336,6 +353,8 @@ main.container { flex: 1; padding-bottom: 48px; }
   padding: 6px;
   min-width: 160px;
   max-width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
 }
 .popover button {
   display: block; width: 100%; text-align: left;
@@ -344,6 +363,7 @@ main.container { flex: 1; padding-bottom: 48px; }
 }
 .popover button:hover { background: var(--primary-soft); color: var(--primary); }
 .popover .popover__empty { padding: 7px 10px; color: var(--muted); font-size: 14px; }
+.popover .popover__title { padding: 4px 10px 6px; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
 
 /* Converter */
 .converter {
@@ -430,6 +450,9 @@ main.container { flex: 1; padding-bottom: 48px; }
 /* Footer, toast */
 .footer { border-top: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 14px; }
 .footer p { margin: 0; padding: 18px 0; }
+.footer p + p { padding-top: 0; margin-top: -8px; }
+.footer a { color: inherit; }
+.footer a:hover { color: var(--primary); }
 
 .toast {
   position: fixed;

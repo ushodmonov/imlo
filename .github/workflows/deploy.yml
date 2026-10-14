@@ -44,15 +44,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Sayt fayllarini yig‘ish
-        run: |
-          mkdir _site
-          cp -r index.html .nojekyll assets data src _site/
+        run: npm run build
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
 
       - id: deployment
         uses: actions/deploy-pages@v4

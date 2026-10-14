@@ -11,6 +11,7 @@ test("lotin → kirill", () => {
   assert.equal(toCyrillic("ma’no"), "маъно");
   assert.equal(toCyrillic("abbreviatsiya"), "аббревиация");
   assert.equal(toCyrillic("SHAHAR"), "ШАҲАР");
+  assert.equal(toCyrillic("yo‘q, Yo‘lak, yoʻrgʻa, yoz"), "йўқ, Йўлак, йўрға, ёз");
 });
 
 test("kirill → lotin", () => {
